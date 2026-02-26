@@ -238,8 +238,8 @@ def LoadNaukri(headless):
     # updated to use latest selenium Chrome service
     driver = None
     try:
-        driver = webdriver.Chrome(options=options, service=ChromeService(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install()))
-        # driver = webdriver.Chrome(options=options, service=ChromeService())
+        # driver = webdriver.Chrome(options=options, service=ChromeService(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install()))
+        driver = webdriver.Chrome(options=options, service=ChromeService())
     except Exception as e:
         print(f"Error launching Chrome: {e}")
         driver = webdriver.Edge(options=options)
