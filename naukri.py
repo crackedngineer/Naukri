@@ -16,7 +16,6 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
-from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
@@ -238,11 +237,11 @@ def LoadNaukri(headless):
     # updated to use latest selenium Chrome service
     driver = None
     try:
-        # driver = webdriver.Chrome(options=options, service=ChromeService(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install()))
-        driver = webdriver.Chrome(options=options, service=ChromeService())
+        driver = webdriver.Edge(options=options, service=webdriver.EdgeService(EdgeChromiumDriverManager().install()))
+        # driver = webdriver.Chrome(options=options, service=ChromeService())
     except Exception as e:
         print(f"Error launching Chrome: {e}")
-        driver = webdriver.Edge(options=options)
+        driver = webdriver.Chrome(options=options)
     log_msg("Google Chrome Launched!")
 
     driver.implicitly_wait(5)
