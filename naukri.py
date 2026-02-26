@@ -21,17 +21,20 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.chrome.service import Service as ChromeService
+from webdriver_manager.chrome import ChromeDriverManager
+from webdriver_manager.microsoft import EdgeChromiumDriverManager
+from webdriver_manager.core.os_manager import ChromeType
 import constants
 
 # Add folder Path of your resume
-originalResumePath = constants.ORIGINAL_RESUME_PATH
+originalResumePath = os.getenv("NAUKRI_ORIGINAL_RESUME_PATH", constants.ORIGINAL_RESUME_PATH)
 # Add Path where modified resume should be saved
-modifiedResumePath = constants.MODIFIED_RESUME_PATH
+modifiedResumePath = os.getenv("NAUKRI_MODIFIED_RESUME_PATH", constants.MODIFIED_RESUME_PATH)
 
 # Update your naukri username and password here before running
-username = constants.USERNAME
-password = constants.PASSWORD
-mob = constants.MOBILE
+username = os.getenv("NAUKRI_USERNAME", constants.USERNAME)
+password = os.getenv("NAUKRI_PASSWORD", constants.PASSWORD)
+mob = os.getenv("NAUKRI_MOBILE", constants.MOBILE)
 
 # False if you dont want to add Random HIDDEN chars to your resume
 updatePDF = False
@@ -235,10 +238,11 @@ def LoadNaukri(headless):
     # updated to use latest selenium Chrome service
     driver = None
     try:
-        driver = webdriver.Chrome(options=options, service=ChromeService())
+        driver = webdriver.Chrome(options=options, service=ChromeService(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install()))
+        # driver = webdriver.Chrome(options=options, service=ChromeService())
     except Exception as e:
         print(f"Error launching Chrome: {e}")
-        driver = webdriver.Chrome(options)
+        driver = webdriver.Edge(options=options)
     log_msg("Google Chrome Launched!")
 
     driver.implicitly_wait(5)
