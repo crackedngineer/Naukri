@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """Naukri Daily update - Using Chrome"""
 
+from ast import Not
 import io
 import logging
 import os
@@ -62,7 +63,9 @@ def log_msg(message):
 def catch(error):
     """Method to catch errors and log error details"""
     _, _, exc_tb = sys.exc_info()
-    lineNo = str(exc_tb.tb_lineno)
+    lineNo = "Unknown"
+    if exc_tb is not None and hasattr(exc_tb, "tb_lineno"):
+        lineNo = str(exc_tb.tb_lineno)
     msg = "%s : %s at Line %s." % (type(error), error, lineNo)
     print(msg)
     logging.error(msg)
@@ -279,18 +282,24 @@ def naukriLogin(headless=False):
             emailFieldElement.clear()
             emailFieldElement.send_keys(username)
             time.sleep(1)
-            passFieldElement.clear()
-            passFieldElement.send_keys(password)
+            if passFieldElement is not None:
+                passFieldElement.clear()
+                passFieldElement.send_keys(password)
             time.sleep(1)
-            loginButton.send_keys(Keys.ENTER)
+            if loginButton is not None:
+                loginButton.send_keys(Keys.ENTER)
             time.sleep(3)
 
             # Added click to Skip button
             print("Checking Skip button")
             if WaitTillElementPresent(driver, close_locator, "XPATH", 10):
-                GetElement(driver, close_locator, "XPATH").click()
+                close_elem = GetElement(driver, close_locator, "XPATH")
+                if close_elem is not None:
+                    close_elem.click()
             if WaitTillElementPresent(driver, skip_locator, "XPATH", 5):
-                GetElement(driver, skip_locator, "XPATH").click()
+                skip_elem = GetElement(driver, skip_locator, "XPATH")
+                if skip_elem is not None:
+                    skip_elem.click()
 
             # CheckPoint to verify login
             if WaitTillElementPresent(driver, "ff-inventory", locator="ID", timeout=40):
@@ -322,17 +331,21 @@ def UpdateProfile(driver):
 
         WaitTillElementPresent(driver, view_profile_locator, "XPATH", 20)
         profElement = GetElement(driver, view_profile_locator, locator="XPATH")
-        profElement.click()
+        if profElement is not None:
+            profElement.click()
         driver.implicitly_wait(2)
 
         if WaitTillElementPresent(driver, close_locator, "XPATH", 10):
-            GetElement(driver, close_locator, locator="XPATH").click()
+            close_elem = GetElement(driver, close_locator, locator="XPATH")
+            if close_elem is not None:
+                close_elem.click()
             time.sleep(2)
 
         WaitTillElementPresent(driver, edit_locator + " | " + saveXpath, "XPATH", 20)
         if is_element_present(driver, By.XPATH, edit_locator):
             editElement = GetElement(driver, edit_locator, locator="XPATH")
-            editElement.click()
+            if editElement is not None:
+                editElement.click()
 
             WaitTillElementPresent(driver, mobXpath, "XPATH", 10)
             mobFieldElement = GetElement(driver, mobXpath, locator="XPATH")
@@ -342,7 +355,8 @@ def UpdateProfile(driver):
                 driver.implicitly_wait(2)
                 
             saveFieldElement = GetElement(driver, saveXpath, locator="XPATH")
-            saveFieldElement.send_keys(Keys.ENTER)
+            if saveFieldElement is not None:
+                saveFieldElement.send_keys(Keys.ENTER)
             driver.implicitly_wait(3)
 
             WaitTillElementPresent(driver, save_confirm, "XPATH", 10)
@@ -359,7 +373,8 @@ def UpdateProfile(driver):
                 driver.implicitly_wait(2)
     
             saveFieldElement = GetElement(driver, saveXpath, locator="XPATH")
-            saveFieldElement.send_keys(Keys.ENTER)
+            if saveFieldElement is not None:
+                saveFieldElement.send_keys(Keys.ENTER)
             driver.implicitly_wait(3)
 
             WaitTillElementPresent(driver, "confirmMessage", locator="ID", timeout=10)
