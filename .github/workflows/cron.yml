@@ -1,0 +1,62 @@
+name: Run Daily Naukri Profile Update Script
+
+on:
+  push:
+    branches:
+      - development
+  schedule:
+    - cron: "0 * * * *" # Runs every hour, change this to your preferred schedule
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+    services:
+      selenium:
+        image: selenium/standalone-chrome
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          ref: development
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+
+      # - name: Installing package list
+      #   run: apt list --installed    
+      # - name: Removing previous chrome instances on runner 
+      #   run: sudo apt purge google-chrome-stable  
+
+      - name: Prepare Selenium
+        uses: nanasess/setup-chromedriver@master
+      - name: Start XVFB
+        run: |
+            google-chrome --version
+            export DISPLAY=:99
+            chromedriver --url-base=/wd/hub &
+            sudo Xvfb -ac :99 -screen 0 1280x1024x24 > /dev/null 2>&1 & # optional, disables headless mode
+        
+        # Need to fetch reqs if needed
+      - name: Installing all necessary packages
+        run: pip install -r requirements.txt
+      # - name: Install xvfb
+      #   run: sudo apt-get install xvfb
+
+      - name: Run Python Script
+        env:
+          NAUKRI_USERNAME: ${{ secrets.NAUKRI_USERNAME }}
+          NAUKRI_PASSWORD: ${{ secrets.NAUKRI_PASSWORD }}
+          MOBILE_NUMBER: ${{ secrets.MOBILE_NUMBER }}
+        run: |
+          python naukri.py
+
+      - name: Commit and Push if Resume Updated
+        run: |
+            git config --global user.email "subhomoyrchoudhury@gmail.com"
+            git config --global user.name "ai-assistant"
+            git add modified_resume.pdf image.png
+            git commit -m "🔄 Update resume via cron job" || exit 0
+            git push
