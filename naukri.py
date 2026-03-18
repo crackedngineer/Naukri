@@ -388,7 +388,36 @@ def UpdateProfile(driver):
     except Exception as e:
         catch(e)
 
+def updateResumeHeadline(driver: str, headline: str) -> None:
+    """Update resume headline on Naukri profile"""
+    try:
+        edit_locator = "(//*[contains(@class, 'edit icon')])[1]"
+        headline_xpath = "//*[@id='resumeHeadlineTxt']"
+        save_xpath = "//form[@name='resumeHeadlineForm']//button[@type='submit']"
 
+        # click edit button to enable headline field
+        if WaitTillElementPresent(driver, edit_locator, "XPATH", 10):
+            editElement = GetElement(driver, edit_locator, locator="XPATH")
+            if editElement is not None:
+                editElement.click()
+                driver.implicitly_wait(2)
+                
+        WaitTillElementPresent(driver, headline_xpath, "XPATH", 10)
+        headline_field = GetElement(driver, headline_xpath, locator="XPATH")
+        if headline_field:
+            headline_field.clear()
+            headline_field.send_keys(headline)
+            driver.implicitly_wait(2)
+
+        save_button = GetElement(driver, save_xpath, locator="XPATH")
+        if save_button is not None:
+            save_button.send_keys(Keys.ENTER)
+        driver.implicitly_wait(3)
+
+        log_msg("Resume Headline Update Attempted")
+
+    except Exception as e:
+        catch(e)
 
 def UpdateResume():
     try:
@@ -496,6 +525,8 @@ def main():
                     UploadResume(driver, originalResumePath)
             else:
                 log_msg("Resume not found at %s " % originalResumePath)
+            updateResumeHeadline(driver, "Software Development Engineer with 4+ Years Experience in Software Development,Python,Golang,FastApi,Microservice Based Architecture,SQL,Postgres Database,MongoDB,Aws,Docker,Redis,Backend Development,agile methodology,Kubernetes,Jenkins,LLM, AI")
+
 
     except Exception as e:
         catch(e)
