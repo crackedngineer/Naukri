@@ -5,7 +5,7 @@ on:
     branches:
       - development
   schedule:
-    - cron: "0 * * * *" # Runs every hour, change this to your preferred schedule
+    - cron: "20 4 * * *"  
 
 jobs:
   run-script:

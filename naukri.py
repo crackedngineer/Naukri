@@ -2,12 +2,12 @@
 # -*- coding: utf-8 -*-
 """Naukri Daily update - Using Chrome"""
 
-from ast import Not
 import io
 import logging
 import os
 import sys
 import time
+import random
 from datetime import datetime
 from random import choice, randint
 from string import ascii_uppercase, digits
@@ -320,7 +320,7 @@ def naukriLogin(headless=False):
     return (status, driver)
 
 
-def UpdateProfile(driver):
+def UpdateProfile(driver, salary):
     try:
         mobXpath = "//*[@name='mobile'] | //*[@id='mob_number']"
         saveXpath = "//button[@ type='submit'][@value='Save Changes'] | //*[@id='saveBasicDetailsBtn']"
@@ -328,6 +328,7 @@ def UpdateProfile(driver):
         edit_locator = "(//*[contains(@class, 'icon edit')])[1]"
         save_confirm = "//*[text()='today' or text()='Today']"
         close_locator = "//*[contains(@class, 'crossIcon')]"
+        salaryXpath = "//input[@id='totalAbsCtc_id']"
 
         WaitTillElementPresent(driver, view_profile_locator, "XPATH", 20)
         profElement = GetElement(driver, view_profile_locator, locator="XPATH")
@@ -352,6 +353,14 @@ def UpdateProfile(driver):
             if mobFieldElement:
                 mobFieldElement.clear()
                 mobFieldElement.send_keys(mob)
+                driver.implicitly_wait(2)
+            
+            # update salary
+            WaitTillElementPresent(driver, salaryXpath, "XPATH", 10)
+            salaryFieldElement = GetElement(driver, salaryXpath, locator="XPATH")
+            if salaryFieldElement:
+                salaryFieldElement.clear()
+                salaryFieldElement.send_keys(str(salary))
                 driver.implicitly_wait(2)
                 
             saveFieldElement = GetElement(driver, saveXpath, locator="XPATH")
@@ -388,7 +397,7 @@ def UpdateProfile(driver):
     except Exception as e:
         catch(e)
 
-def updateResumeHeadline(driver: str, headline: str) -> None:
+def updateResumeHeadline(driver, headline: str) -> None:
     """Update resume headline on Naukri profile"""
     try:
         edit_locator = "(//*[contains(@class, 'edit icon')])[1]"
@@ -471,20 +480,25 @@ def UploadResume(driver, resumePath):
 
         time.sleep(2)
         if WaitTillElementPresent(driver, close_locator, "XPATH", 10):
-            GetElement(driver, close_locator, locator="XPATH").click()
+            close_element = GetElement(driver, close_locator, locator="XPATH")
+            if close_element is not None:
+                close_element.click()
             time.sleep(2)
 
         if WaitTillElementPresent(driver, lazyattachCVID, locator="ID", timeout=5):
             AttachElement = GetElement(driver, uploadCV_btn, locator="XPATH")
-            AttachElement.send_keys(os.path.abspath(resumePath))
+            if AttachElement is not None:
+                AttachElement.send_keys(os.path.abspath(resumePath))
 
         if WaitTillElementPresent(driver, attachCVID, locator="ID", timeout=5):
             AttachElement = GetElement(driver, attachCVID, locator="ID")
-            AttachElement.send_keys(os.path.abspath(resumePath))
+            if AttachElement is not None:
+                AttachElement.send_keys(os.path.abspath(resumePath))
 
         if WaitTillElementPresent(driver, saveXpath, locator="ID", timeout=5):
             saveElement = GetElement(driver, saveXpath, locator="XPATH")
-            saveElement.click()
+            if saveElement is not None:
+                saveElement.click()
 
         WaitTillElementPresent(driver, CheckPointXpath, locator="XPATH", timeout=30)
         CheckPoint = GetElement(driver, CheckPointXpath, locator="XPATH")
@@ -513,10 +527,25 @@ def UploadResume(driver, resumePath):
 def main():
     log_msg("-----Naukri.py Script Run Begin-----")
     driver = None
+    salary_list = [i*100000 for i in range(25, 30)]
+    RESUME_HEADLINES = [
+        "Software Development Engineer with 4+ Years Experience in Software Development,Python,Golang,FastApi,Microservice Based Architecture,SQL,Postgres Database,MongoDB,Aws,Docker,Redis,Backend Development,agile methodology,Kubernetes,Jenkins,LLM, AI",
+        "Software Development Engineer with 4+ Years Experience in Software Development,Python,Golang,FastAPI,Microservice Architecture,SQL,Postgres,MongoDB,AWS,Docker,Redis,Kubernetes,CI/CD,Jenkins,LLM,AI",
+        "Software Engineer with 4+ Years Experience in Backend Development,Python,Golang,FastAPI,Microservices,SQL,Postgres,MongoDB,Redis,AWS,Docker,Kubernetes,CI/CD,Jenkins,AI,LLM",
+        "Software Development Engineer with 4+ Years Experience in Backend Systems,Python,Golang,FastAPI,Microservices,SQL,Postgres,MongoDB,Redis,Kubernetes,Docker,CI/CD,GitOps,AI",
+        "Software Engineer with 4+ Years Experience in Software Development,Python,Golang,FastAPI,Microservices,SQL,Postgres,MongoDB,AWS,Redis,Docker,Kubernetes,CI/CD,AI,LLM",
+        "Software Development Engineer with 4+ Years Experience in Backend Development,Python,Golang,Microservices,FastAPI,SQL,Postgres,MongoDB,Redis,Docker,Kubernetes,CI/CD,AI",
+        "Software Engineer with 4+ Years Experience in Scalable Systems,Python,Golang,FastAPI,Microservices,SQL,Postgres,MongoDB,Redis,AWS,Docker,Kubernetes,CI/CD,AI",
+        "Software Development Engineer with 4+ Years Experience in Platform Engineering,Python,Golang,Microservices,FastAPI,SQL,Postgres,MongoDB,Redis,Docker,Kubernetes,CI/CD,GitOps",
+        "Software Engineer with 4+ Years Experience in Backend Development,Python,Golang,FastAPI,Microservices,SQL,Postgres,MongoDB,Redis,Docker,Kubernetes,CI/CD,AI,LLM",
+        "Software Development Engineer with 4+ Years Experience in Backend Systems,Python,Golang,FastAPI,Microservices,SQL,Postgres,MongoDB,Redis,Kubernetes,Docker,CI/CD,AI",
+        "Software Engineer with 4+ Years Experience in Software Development,Python,Golang,FastAPI,Microservices,SQL,Postgres,MongoDB,Redis,AWS,Docker,Kubernetes,CI/CD,AI"
+    ]
+    
     try:
         status, driver = naukriLogin(headless)
         if status:
-            UpdateProfile(driver)
+            UpdateProfile(driver, random.choice(salary_list))
             if os.path.exists(originalResumePath):
                 if updatePDF:
                     resumePath = UpdateResume()
@@ -525,7 +554,7 @@ def main():
                     UploadResume(driver, originalResumePath)
             else:
                 log_msg("Resume not found at %s " % originalResumePath)
-            updateResumeHeadline(driver, "Software Development Engineer with 4+ Years Experience in Software Development,Python,Golang,FastApi,Microservice Based Architecture,SQL,Postgres Database,MongoDB,Aws,Docker,Redis,Backend Development,agile methodology,Kubernetes,Jenkins,LLM, AI")
+            updateResumeHeadline(driver, random.choice(RESUME_HEADLINES))
 
 
     except Exception as e:
