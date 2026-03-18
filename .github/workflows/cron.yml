@@ -27,7 +27,7 @@ jobs:
           python-version: "3.x"
 
       - name: Build Docker image
-        run: docker build -t selenium-app .
+        run: docker build -t selenium-app -f .github/workflows/Dockerfile .
 
       - name: Run container
         run: docker run selenium-app
