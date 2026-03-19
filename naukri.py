@@ -24,6 +24,9 @@ from selenium.webdriver.chrome.service import Service as ChromeService
 from webdriver_manager.chrome import ChromeDriverManager
 from webdriver_manager.core.os_manager import ChromeType
 import constants
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Add folder Path of your resume
 originalResumePath = os.getenv("NAUKRI_ORIGINAL_RESUME_PATH", constants.ORIGINAL_RESUME_PATH)
@@ -359,7 +362,10 @@ def UpdateProfile(driver, salary):
             WaitTillElementPresent(driver, salaryXpath, "XPATH", 10)
             salaryFieldElement = GetElement(driver, salaryXpath, locator="XPATH")
             if salaryFieldElement:
-                salaryFieldElement.clear()
+                salaryFieldElement.click()
+                salaryFieldElement.send_keys(Keys.CONTROL + "a")
+                salaryFieldElement.send_keys(Keys.DELETE)
+                # salaryFieldElement.send_keys(str(salary))
                 salaryFieldElement.send_keys(str(salary))
                 driver.implicitly_wait(2)
                 
@@ -527,7 +533,7 @@ def UploadResume(driver, resumePath):
 def main():
     log_msg("-----Naukri.py Script Run Begin-----")
     driver = None
-    salary_list = [i*100000 for i in range(25, 30)]
+    salary = os.getenv("NAUKRI_SALARY", 0)
     RESUME_HEADLINES = [
         "Software Development Engineer with 4+ Years Experience in Software Development,Python,Golang,FastApi,Microservice Based Architecture,SQL,Postgres Database,MongoDB,Aws,Docker,Redis,Backend Development,agile methodology,Kubernetes,Jenkins,LLM, AI",
         "Software Development Engineer with 4+ Years Experience in Software Development,Python,Golang,FastAPI,Microservice Architecture,SQL,Postgres,MongoDB,AWS,Docker,Redis,Kubernetes,CI/CD,Jenkins,LLM,AI",
@@ -545,7 +551,7 @@ def main():
     try:
         status, driver = naukriLogin(headless)
         if status:
-            UpdateProfile(driver, random.choice(salary_list))
+            UpdateProfile(driver, salary)
             if os.path.exists(originalResumePath):
                 if updatePDF:
                     resumePath = UpdateResume()
