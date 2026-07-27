@@ -112,6 +112,19 @@ def is_element_present(driver, how, what):
     return True
 
 
+def safe_click(driver, element):
+    """Click element; fall back to JS click if a chatbot/overlay intercepts it
+
+    Naukri's chatbot widget overlays the profile/edit links and blocks
+    native Selenium clicks with ElementClickInterceptedException.
+    """
+    try:
+        element.click()
+    except Exception as e:
+        log_msg("Native click failed (%s), retrying with JS click" % e)
+        driver.execute_script("arguments[0].click();", element)
+
+
 def WaitTillElementPresent(driver, elementTag, locator="ID", timeout=30):
     """Wait till element present. Default 30 seconds"""
     result = False
@@ -320,7 +333,7 @@ def UpdateProfile(driver):
 
         WaitTillElementPresent(driver, view_profile_locator, "XPATH", 20)
         profElement = GetElement(driver, view_profile_locator, locator="XPATH")
-        profElement.click()
+        safe_click(driver, profElement)
         driver.implicitly_wait(2)
 
         if WaitTillElementPresent(driver, close_locator, "XPATH", 10):
@@ -330,7 +343,7 @@ def UpdateProfile(driver):
         WaitTillElementPresent(driver, edit_locator + " | " + saveXpath, "XPATH", 20)
         if is_element_present(driver, By.XPATH, edit_locator):
             editElement = GetElement(driver, edit_locator, locator="XPATH")
-            editElement.click()
+            safe_click(driver, editElement)
 
             WaitTillElementPresent(driver, mobXpath, "XPATH", 10)
             mobFieldElement = GetElement(driver, mobXpath, locator="XPATH")
