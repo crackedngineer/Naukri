@@ -1,7 +1,6 @@
 # Daily Naukri Update
 [![license](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://github.com/navchandar/Naukri/blob/master/LICENSE) 
 [![Test](https://github.com/navchandar/Naukri/actions/workflows/main.yml/badge.svg?branch=master)](https://github.com/navchandar/Naukri/actions/workflows/main.yml)
-[![Code Climate](https://codeclimate.com/github/navchandar/Naukri.svg)](https://codeclimate.com/github/navchandar/Naukri)
 [![made-with-python](https://img.shields.io/badge/Made%20with-Python-1f425f.svg)](https://www.python.org/) 
 
 
@@ -16,20 +15,24 @@ In order to use this, you need Git, Python 3, and Google Chrome on your machine.
 
 ## Installation
 
-Install [Python 3.10+](https://www.python.org/getit/) and run the below commands
-
-```bash
-git clone https://github.com/navchandar/Naukri.git
-cd Naukri
-pip install --upgrade pip
-python3 -m venv .venv              # create virtual environment for installing dependencies
-./.venv/bin/activate.ps1  or  ./.venv/Scripts/Activate.ps1      
-# source ./.venv/bin/activate  # command for macOS/linux
-
-pip install -r requirements.txt    # Install dependencies
-```
-
-Configuration: Update `RESUME_PATH`, `USERNAME`, `PASSWORD`, and `MOBILE` directly in `constants.py` before running the script.
+ - Install [Python 3.10+](https://www.python.org/getit/) and run the below commands
+ - Clone or Fork this repository
+   ```bash
+   git clone https://github.com/navchandar/Naukri.git
+   cd Naukri
+   pip install --upgrade pip
+   ```
+ - Create a virtual environment for installing dependencies
+   ```
+   python3 -m venv .venv
+   ./.venv/bin/activate.ps1  # or  ./.venv/Scripts/Activate.ps1
+   # source ./.venv/bin/activate  # command for macOS/linux
+   # Install dependencies
+   pip install -r requirements.txt
+   ```
+ - Edit Configuration in `constants.py` to update `RESUME_PATH`, `USERNAME`, `PASSWORD`, and `MOBILE` before running the script.
+> [!WARNING]
+   > DO NOT COMMIT or PUSH this `constants.py` file to Github. This will leak your login credentials!
 
 ### Run the Script
 ```bash
