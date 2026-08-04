@@ -1,0 +1,17 @@
+services:
+  naukri-bot:
+    build: .
+    image: naukri-bot:latest
+    container_name: naukri-bot
+    shm_size: "2gb" # Chrome needs more than Docker's default 64MB /dev/shm
+    environment:
+      - NAUKRI_USERNAME=${NAUKRI_USERNAME}
+      - NAUKRI_PASSWORD=${NAUKRI_PASSWORD}
+      - NAUKRI_MOBILE=${NAUKRI_MOBILE}
+      - NAUKRI_ORIGINAL_RESUME_PATH=${NAUKRI_ORIGINAL_RESUME_PATH}
+      - NAUKRI_MODIFIED_RESUME_PATH=${NAUKRI_MODIFIED_RESUME_PATH}
+      - NAUKRI_SALARY=${NAUKRI_SALARY}
+    volumes:
+      - ./resume.pdf:/app/resume.pdf:ro # put your resume next to this file
+      - ./naukri.log:/app/naukri.log # log persists on the host after each run
+      - ./screenshots:/app/screenshots

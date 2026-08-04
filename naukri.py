@@ -20,6 +20,7 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.chrome.service import Service as ChromeService
 from webdriver_manager.chrome import ChromeDriverManager
 from webdriver_manager.core.os_manager import ChromeType
@@ -29,9 +30,13 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Add folder Path of your resume
-originalResumePath = os.getenv("NAUKRI_ORIGINAL_RESUME_PATH", constants.ORIGINAL_RESUME_PATH)
+originalResumePath = os.getenv(
+    "NAUKRI_ORIGINAL_RESUME_PATH", constants.ORIGINAL_RESUME_PATH
+)
 # Add Path where modified resume should be saved
-modifiedResumePath = os.getenv("NAUKRI_MODIFIED_RESUME_PATH", constants.MODIFIED_RESUME_PATH)
+modifiedResumePath = os.getenv(
+    "NAUKRI_MODIFIED_RESUME_PATH", constants.MODIFIED_RESUME_PATH
+)
 
 # Update your naukri username and password here before running
 username = os.getenv("NAUKRI_USERNAME", constants.USERNAME)
@@ -120,16 +125,13 @@ def is_element_present(driver, how, what):
 
 
 def safe_click(driver, element):
-    """Click element; fall back to JS click if a chatbot/overlay intercepts it
-
-    Naukri's chatbot widget overlays the profile/edit links and blocks
-    native Selenium clicks with ElementClickInterceptedException.
-    """
+    """Click an element via an escalating cascade of strategies."""
+    # Strategy 1: native click
     try:
         element.click()
+        return
     except Exception as e:
-        log_msg("Native click failed (%s), retrying with JS click" % e)
-        driver.execute_script("arguments[0].click();", element)
+        log_msg("safe_click: native click failed (%s), trying hover+click" % e)
 
 
 def WaitTillElementPresent(driver, elementTag, locator="ID", timeout=30):
@@ -153,14 +155,15 @@ def WaitTillElementPresent(driver, elementTag, locator="ID", timeout=30):
     driver.implicitly_wait(3)
     return result
 
+
 def Logout(driver):
-    """Logout from Naukri session """
+    """Logout from Naukri session"""
 
     try:
         # -------- Drawer Menu XPaths --------
         drawer_xpaths = [
             f"//*[contains({ci('@class')}, 'drawer__icon')]",
-            f"//div[contains({ci('@class')}, 'drawer')]"
+            f"//div[contains({ci('@class')}, 'drawer')]",
         ]
 
         for xpath in drawer_xpaths:
@@ -179,11 +182,9 @@ def Logout(driver):
         # -------- Logout XPaths --------
         logout_xpaths = [
             "//a[@data-type='logoutLink']",
-
             f"//a[contains({ci('@class')}, 'list-cta') and contains({ci('@title')}, 'logout')]",
             f"//a[contains({ci('@class')}, 'logout')]",
             f"//a[contains({ci('@href')}, 'logout')]",
-
             f"//*[contains({ci('text()')}, 'logout')]",
             f"//*[contains({ci('.')}, 'logout')]",
         ]
@@ -209,7 +210,8 @@ def Logout(driver):
     except Exception as e:
         log_msg(f"Logout error: {e}")
         return False
-    
+
+
 def ci(xpath_part: str) -> str:
     """
     Wraps an XPath string in lowercase translate() for case-insensitive matching.
@@ -236,6 +238,25 @@ def tearDown(driver):
         pass
 
 
+def take_screenshot(driver, label):
+    """Save a timestamped screenshot for debugging element-detection issues.
+
+    Never raises — a failed screenshot should never take down the actual
+    automation flow. Saves under NAUKRI_SCREENSHOT_DIR (default:
+    "screenshots"), which the GitHub Action / docker run should mount or
+    upload as an artifact so you can inspect what Chrome actually saw.
+    """
+    try:
+        screenshot_dir = os.getenv("NAUKRI_SCREENSHOT_DIR", "screenshots")
+        os.makedirs(screenshot_dir, exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+        path = os.path.join(screenshot_dir, f"{timestamp}_{label}.png")
+        driver.save_screenshot(path)
+        log_msg("Screenshot saved: %s" % path)
+    except Exception as e:
+        log_msg("Could not save screenshot (%s): %s" % (label, e))
+
+
 def randomText():
     return "".join(choice(ascii_uppercase + digits) for _ in range(randint(1, 5)))
 
@@ -248,14 +269,22 @@ def LoadNaukri(headless):
     options.add_argument("--start-maximized")  # ("--kiosk") for MAC
     options.add_argument("--disable-popups")
     options.add_argument("--disable-gpu")
+    # Required when Chrome runs as root (which it does by default inside
+    # Docker) — without --no-sandbox Chrome refuses to create a session at
+    # all and Selenium fails with "session not created: Chrome instance
+    # exited". --disable-dev-shm-usage avoids crashes from Docker's small
+    # default /dev/shm (also pass --shm-size=2g when running the container).
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
     if headless:
-        options.add_argument("--disable-dev-shm-usage")
         options.add_argument("headless")
 
     # updated to use latest selenium Chrome service
     driver = None
     try:
-        driver = webdriver.Chrome(options=options, service=ChromeService(ChromeDriverManager().install()))
+        driver = webdriver.Chrome(
+            options=options, service=ChromeService(ChromeDriverManager().install())
+        )
         # driver = webdriver.Chrome(options=options, service=ChromeService())
     except Exception as e:
         print(f"Error launching Chrome: {e}")
@@ -329,6 +358,7 @@ def naukriLogin(headless=False):
                     return (status, driver)
             else:
                 log_msg("Unknown Login Error")
+                take_screenshot(driver, "login_error")
                 return (status, driver)
 
     except Exception as e:
@@ -340,23 +370,29 @@ def UpdateProfile(driver, salary):
     try:
         mobXpath = "//*[@name='mobile'] | //*[@id='mob_number']"
         saveXpath = "//button[@ type='submit'][@value='Save Changes'] | //*[@id='saveBasicDetailsBtn']"
-        view_profile_locator = "//*[contains(@class, 'view-profile')]//a"
+        view_profile_locator = "//*[contains(@class, 'view-profile-wrapper')]//a"
         edit_locator = "(//*[contains(@class, 'icon edit')])[1]"
         save_confirm = "//*[text()='today' or text()='Today']"
         close_locator = "//*[contains(@class, 'crossIcon')]"
         salaryXpath = "//input[@id='totalAbsCtc_id']"
 
         WaitTillElementPresent(driver, view_profile_locator, "XPATH", 20)
-        profElement = GetElement(driver, view_profile_locator, locator="XPATH")
-        if profElement is not None:
-            safe_click(driver, profElement)
-        driver.implicitly_wait(2)
+        # profElement = GetElement(driver, view_profile_locator, locator="XPATH")
+        # if profElement is not None:
+        #     safe_click(driver, profElement)
+        # driver.implicitly_wait(5)
 
-        if WaitTillElementPresent(driver, close_locator, "XPATH", 10):
-            close_elem = GetElement(driver, close_locator, locator="XPATH")
-            if close_elem is not None:
-                close_elem.click()
-            time.sleep(2)
+        # if WaitTillElementPresent(driver, close_locator, "XPATH", 10):
+        #     close_elem = GetElement(driver, close_locator, locator="XPATH")
+        #     if close_elem is not None:
+        #         close_elem.click()
+        #     time.sleep(2)
+
+        profilePageUrl = "https://www.naukri.com/mnjuser/profile"
+        driver.get(profilePageUrl)
+        driver.implicitly_wait(5)
+        if "profile" in driver.title.lower():
+            log_msg("Profile Page Loaded Successfully!")
 
         WaitTillElementPresent(driver, edit_locator + " | " + saveXpath, "XPATH", 20)
         if is_element_present(driver, By.XPATH, edit_locator):
@@ -370,7 +406,7 @@ def UpdateProfile(driver, salary):
                 mobFieldElement.clear()
                 mobFieldElement.send_keys(mob)
                 driver.implicitly_wait(2)
-            
+
             # update salary
             WaitTillElementPresent(driver, salaryXpath, "XPATH", 10)
             salaryFieldElement = GetElement(driver, salaryXpath, locator="XPATH")
@@ -381,7 +417,7 @@ def UpdateProfile(driver, salary):
                 # salaryFieldElement.send_keys(str(salary))
                 salaryFieldElement.send_keys(str(salary))
                 driver.implicitly_wait(2)
-                
+
             saveFieldElement = GetElement(driver, saveXpath, locator="XPATH")
             if saveFieldElement is not None:
                 saveFieldElement.send_keys(Keys.ENTER)
@@ -399,7 +435,7 @@ def UpdateProfile(driver, salary):
                 mobFieldElement.clear()
                 mobFieldElement.send_keys(mob)
                 driver.implicitly_wait(2)
-    
+
             saveFieldElement = GetElement(driver, saveXpath, locator="XPATH")
             if saveFieldElement is not None:
                 saveFieldElement.send_keys(Keys.ENTER)
@@ -416,7 +452,8 @@ def UpdateProfile(driver, salary):
     except Exception as e:
         catch(e)
 
-def updateResumeHeadline(driver, headline: str) -> None:
+
+def UpdateResumeHeadline(driver, headline: str) -> None:
     """Update resume headline on Naukri profile"""
     try:
         edit_locator = "(//*[contains(@class, 'edit icon')])[1]"
@@ -424,28 +461,44 @@ def updateResumeHeadline(driver, headline: str) -> None:
         save_xpath = "//form[@name='resumeHeadlineForm']//button[@type='submit']"
 
         # click edit button to enable headline field
-        if WaitTillElementPresent(driver, edit_locator, "XPATH", 10):
+        edit_present = WaitTillElementPresent(driver, edit_locator, "XPATH", 10)
+        # take_screenshot(
+        #     driver,
+        #     "headline_edit_button_%s" % ("found" if edit_present else "not_found"),
+        # )
+        if edit_present:
             editElement = GetElement(driver, edit_locator, locator="XPATH")
             if editElement is not None:
-                editElement.click()
+                safe_click(driver, editElement)
                 driver.implicitly_wait(2)
-                
-        WaitTillElementPresent(driver, headline_xpath, "XPATH", 10)
+
+        headline_present = WaitTillElementPresent(driver, headline_xpath, "XPATH", 10)
+        # take_screenshot(
+        #     driver, "headline_field_%s" % ("found" if headline_present else "not_found")
+        # )
         headline_field = GetElement(driver, headline_xpath, locator="XPATH")
         if headline_field:
             headline_field.clear()
             headline_field.send_keys(headline)
             driver.implicitly_wait(2)
+            # take_screenshot(driver, "headline_field_filled")
 
         save_button = GetElement(driver, save_xpath, locator="XPATH")
+        # take_screenshot(
+        #     driver,
+        #     "save_button_%s" % ("found" if save_button is not None else "not_found"),
+        # )
         if save_button is not None:
             save_button.send_keys(Keys.ENTER)
         driver.implicitly_wait(3)
+        # take_screenshot(driver, "headline_after_save")
 
         log_msg("Resume Headline Update Attempted")
 
     except Exception as e:
+        take_screenshot(driver, "headline_update_error")
         catch(e)
+
 
 def UpdateResume():
     try:
@@ -483,7 +536,6 @@ def UpdateResume():
     except Exception as e:
         catch(e)
     return os.path.abspath(originalResumePath)
-
 
 
 def UploadResume(driver, resumePath):
@@ -560,11 +612,17 @@ def main():
         "Software Development Engineer with 4+ Years Experience in Backend Systems,Python,Golang,FastAPI,Microservices,SQL,Postgres,MongoDB,Redis,Kubernetes,Docker,CI/CD,AI",
         "Software Engineer with 4+ Years Experience in Software Development,Python,Golang,FastAPI,Microservices,SQL,Postgres,MongoDB,Redis,AWS,Docker,Kubernetes,CI/CD,AI"
     ]
-    
+
     try:
         status, driver = naukriLogin(headless)
-        if status:
-            UpdateProfile(driver, salary)
+        if status and driver is not None:
+            # UpdateProfile(driver, salary)
+            profilePageUrl = "https://www.naukri.com/mnjuser/profile"
+            driver.get(profilePageUrl)
+            driver.implicitly_wait(5)
+            if "profile" in driver.title.lower():
+                log_msg("Profile Page Loaded Successfully!")
+            UpdateResumeHeadline(driver, random.choice(RESUME_HEADLINES))
             if os.path.exists(originalResumePath):
                 if updatePDF:
                     resumePath = UpdateResume()
@@ -573,8 +631,6 @@ def main():
                     UploadResume(driver, originalResumePath)
             else:
                 log_msg("Resume not found at %s " % originalResumePath)
-            updateResumeHeadline(driver, random.choice(RESUME_HEADLINES))
-
 
     except Exception as e:
         catch(e)
