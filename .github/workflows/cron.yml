@@ -49,7 +49,8 @@ jobs:
           NAUKRI_SALARY: ${{ secrets.NAUKRI_SALARY }}
         # The image's ENTRYPOINT (which starts Xvfb) is not invoked in
         # container-job mode, so xvfb-run wraps the command directly instead.
-        run: xvfb-run -a python3 /app/naukri.py
+        # run: xvfb-run -a python3 /app/naukri.py
+        run: python3 /app/naukri.py
 
       - name: Upload run log
         if: always()
