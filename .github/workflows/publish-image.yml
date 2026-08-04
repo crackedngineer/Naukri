@@ -9,7 +9,7 @@ on:
       - naukri.py
       - constants.py
       - requirements.txt
-      - .github/workflows/docker-publish.yml
+      - .github/workflows/publish-image.yml
   workflow_dispatch: {}   # manual "Run workflow" button
 
 env:
