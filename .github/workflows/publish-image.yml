@@ -29,7 +29,7 @@ jobs:
       - name: Set lowercase image name
         # GHCR requires a lowercase image path; github.repository may have
         # uppercase characters (org/repo names aren't guaranteed lowercase).
-        run: echo "IMAGE=${REGISTRY}/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
+        run: echo "IMAGE=${REGISTRY}/$(echo '${{ github.repository }}-bot' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
 
       - name: Log in to GHCR
         uses: docker/login-action@v4
