@@ -8,21 +8,26 @@ on:
 jobs:
   run-bot:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+
+    permissions:
+      packages: read
+      contents: read
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
       - name: Prepare directories
         run: |
           mkdir -p screenshots
           touch naukri.log
 
-      - name: Build Docker image
-        run: docker compose build --pull
+      - name: Pull latest image
+        run: docker compose pull
 
-      - name: Run Naukri Bot
+      - name: Run bot
         env:
           NAUKRI_USERNAME: ${{ secrets.NAUKRI_USERNAME }}
           NAUKRI_PASSWORD: ${{ secrets.NAUKRI_PASSWORD }}
@@ -35,11 +40,11 @@ jobs:
             --abort-on-container-exit \
             --exit-code-from naukri-bot
 
-      - name: Show container logs
+      - name: Show logs
         if: always()
         run: docker compose logs
 
-      - name: Stop containers
+      - name: Cleanup
         if: always()
         run: docker compose down -v
 
@@ -49,7 +54,6 @@ jobs:
         with:
           name: naukri-log
           path: naukri.log
-          retention-days: 14
 
       - name: Upload screenshots
         if: always()
@@ -57,4 +61,3 @@ jobs:
         with:
           name: naukri-screenshots
           path: screenshots/
-          retention-days: 14
