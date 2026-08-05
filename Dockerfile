@@ -37,7 +37,8 @@ RUN pip3 install --no-cache-dir -r /app/requirements.txt
 # ---- App code ----
 COPY naukri.py constants.py /app/
 COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+RUN sed -i 's/\r$//' /entrypoint.sh \
+    && chmod +x /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["python3", "naukri.py"]

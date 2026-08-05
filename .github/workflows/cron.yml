@@ -1,58 +1,49 @@
 name: Naukri Daily Update
 
 on:
-  workflow_dispatch: {}        # manual "Run workflow" button
+  workflow_dispatch:
   schedule:
-    - cron: "30 3 * * *"       # ~9:00 AM IST daily — adjust to taste (cron is UTC)
+    - cron: "30 3 * * *"
 
 jobs:
-  prepare:
-    runs-on: ubuntu-latest
-    outputs:
-      image: ${{ steps.set.outputs.image }}
-    steps:
-      - id: set
-        run: echo "image=ghcr.io/$(echo '${{ github.repository }}-bot' | tr '[:upper:]' '[:lower:]'):latest" >> "$GITHUB_OUTPUT"
-
   run-bot:
-    needs: prepare
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    permissions:
-      contents: read
-      packages: read          # needed to pull the (private-by-default) GHCR image
-
-    # The whole job runs *inside* our published image — this is the "sandbox".
-    # No checkout, no docker pull/run needed: the script is already baked in
-    # at /app, and $GITHUB_WORKSPACE is auto-mounted for artifacts.
-    container:
-      image: ${{ needs.prepare.outputs.image }}
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GH_TOKEN }}
-      options: --shm-size=2gb   # Chrome needs more than Docker's default 64MB /dev/shm
+    timeout-minutes: 20
 
     steps:
-      - name: Restore resume file from secret
-        # Steps default to a working directory of $GITHUB_WORKSPACE, which is
-        # also where naukri.py's default relative paths (resume.pdf,
-        # naukri.log, screenshots/) land — so everything ends up in the same
-        # place artifact upload looks, with no env-var path overrides needed.
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Prepare directories
         run: |
           mkdir -p screenshots
+          touch naukri.log
 
-      - name: Run the scraper
+      - name: Build Docker image
+        run: docker compose build --pull
+
+      - name: Run Naukri Bot
         env:
           NAUKRI_USERNAME: ${{ secrets.NAUKRI_USERNAME }}
           NAUKRI_PASSWORD: ${{ secrets.NAUKRI_PASSWORD }}
           NAUKRI_MOBILE: ${{ secrets.NAUKRI_MOBILE }}
           NAUKRI_SALARY: ${{ secrets.NAUKRI_SALARY }}
-        # The image's ENTRYPOINT (which starts Xvfb) is not invoked in
-        # container-job mode, so xvfb-run wraps the command directly instead.
-        # run: xvfb-run -a python3 /app/naukri.py
-        run: python3 /app/naukri.py
+          NAUKRI_ORIGINAL_RESUME_PATH: /app/resume.pdf
+          NAUKRI_MODIFIED_RESUME_PATH: /app/resume.pdf
+        run: |
+          docker compose up \
+            --abort-on-container-exit \
+            --exit-code-from naukri-bot
 
-      - name: Upload run log
+      - name: Show container logs
+        if: always()
+        run: docker compose logs
+
+      - name: Stop containers
+        if: always()
+        run: docker compose down -v
+
+      - name: Upload log
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -60,7 +51,7 @@ jobs:
           path: naukri.log
           retention-days: 14
 
-      - name: Upload debug screenshots
+      - name: Upload screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
