@@ -1,9 +1,10 @@
 services:
   naukri-bot:
     # For Development
-    # build: .
-    # image: naukri-bot:latest
-    image: ghcr.io/crackedngineer/naukri-bot:latest
+    build: .
+    image: naukri-bot:latest
+    # For Production
+    # image: ghcr.io/crackedngineer/naukri-bot:latest
     container_name: naukri-bot
     shm_size: "2gb" # Chrome needs more than Docker's default 64MB /dev/shm
     environment:
