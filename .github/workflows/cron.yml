@@ -23,6 +23,17 @@ jobs:
         run: |
           mkdir -p screenshots
           touch naukri.log
+      
+      - name: Create .env
+        run: |
+          cat > .env <<EOF
+          NAUKRI_USERNAME=${{ secrets.NAUKRI_USERNAME }}
+          NAUKRI_PASSWORD=${{ secrets.NAUKRI_PASSWORD }}
+          NAUKRI_MOBILE=${{ secrets.NAUKRI_MOBILE }}
+          NAUKRI_ORIGINAL_RESUME_PATH=/app/resume.pdf
+          NAUKRI_MODIFIED_RESUME_PATH=/app/resume.pdf
+          NAUKRI_SALARY=${{ secrets.NAUKRI_SALARY }}
+          EOF
 
       - name: Pull latest image
         run: docker compose pull
