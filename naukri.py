@@ -560,16 +560,19 @@ def UploadResume(driver, resumePath):
             AttachElement = GetElement(driver, uploadCV_btn, locator="XPATH")
             if AttachElement is not None:
                 AttachElement.send_keys(os.path.abspath(resumePath))
+        # take_screenshot(driver, "upload_resume")
 
         if WaitTillElementPresent(driver, attachCVID, locator="ID", timeout=5):
             AttachElement = GetElement(driver, attachCVID, locator="ID")
             if AttachElement is not None:
                 AttachElement.send_keys(os.path.abspath(resumePath))
+        # take_screenshot(driver, "attach_resume")
 
         if WaitTillElementPresent(driver, saveXpath, locator="ID", timeout=5):
             saveElement = GetElement(driver, saveXpath, locator="XPATH")
             if saveElement is not None:
                 saveElement.click()
+        # take_screenshot(driver, "save_resume")
 
         WaitTillElementPresent(driver, CheckPointXpath, locator="XPATH", timeout=30)
         CheckPoint = GetElement(driver, CheckPointXpath, locator="XPATH")
