@@ -11,9 +11,9 @@ services:
       - NAUKRI_PASSWORD=${NAUKRI_PASSWORD}
       - NAUKRI_MOBILE=${NAUKRI_MOBILE}
       - NAUKRI_ORIGINAL_RESUME_PATH=${NAUKRI_ORIGINAL_RESUME_PATH}
-      - NAUKRI_MODIFIED_RESUME_PATH=${NAUKRI_MODIFIED_RESUME_PATH}
+      # - NAUKRI_MODIFIED_RESUME_PATH=${NAUKRI_MODIFIED_RESUME_PATH}
       - NAUKRI_SALARY=${NAUKRI_SALARY}
     volumes:
-      - ./resume.pdf:/app/resume.pdf:ro # put your resume next to this file
+      - ./${NAUKRI_ORIGINAL_RESUME_PATH}:/app/${NAUKRI_ORIGINAL_RESUME_PATH}:ro # put your resume next to this file
       - ./naukri.log:/app/naukri.log # log persists on the host after each run
       - ./screenshots:/app/screenshots

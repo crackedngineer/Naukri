@@ -29,19 +29,26 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
+def log_msg(message):
+    """Print to console and store to Log"""
+    print(message)
+    logging.info(message)
+
+
 # Add folder Path of your resume
-originalResumePath = os.getenv(
-    "NAUKRI_ORIGINAL_RESUME_PATH", constants.ORIGINAL_RESUME_PATH
-)
+originalResumePath = os.getenv("NAUKRI_ORIGINAL_RESUME_PATH", "")
+if originalResumePath == "":
+    raise ValueError("Environment variable 'NAUKRI_ORIGINAL_RESUME_PATH' is not set")
 # Add Path where modified resume should be saved
-modifiedResumePath = os.getenv(
-    "NAUKRI_MODIFIED_RESUME_PATH", constants.MODIFIED_RESUME_PATH
-)
+modifiedResumePath = os.getenv("NAUKRI_MODIFIED_RESUME_PATH", "")
+if not modifiedResumePath:
+    log_msg("Environment variable 'NAUKRI_MODIFIED_RESUME_PATH' is not set")
 
 # Update your naukri username and password here before running
-username = os.getenv("NAUKRI_USERNAME", constants.USERNAME)
-password = os.getenv("NAUKRI_PASSWORD", constants.PASSWORD)
-mob = os.getenv("NAUKRI_MOBILE", constants.MOBILE)
+username = os.getenv("NAUKRI_USERNAME", "")
+password = os.getenv("NAUKRI_PASSWORD", "")
+mob = os.getenv("NAUKRI_MOBILE", "")
 
 # False if you dont want to add Random HIDDEN chars to your resume
 updatePDF = False
@@ -60,12 +67,6 @@ logging.basicConfig(
 # logging.disable(logging.CRITICAL)
 os.environ["WDM_LOCAL"] = "1"
 os.environ["WDM_LOG_LEVEL"] = "0"
-
-
-def log_msg(message):
-    """Print to console and store to Log"""
-    print(message)
-    logging.info(message)
 
 
 def catch(error):
@@ -274,7 +275,7 @@ def LoadNaukri(headless):
     # all and Selenium fails with "session not created: Chrome instance
     # exited". --disable-dev-shm-usage avoids crashes from Docker's small
     # default /dev/shm (also pass --shm-size=2g when running the container).
-    options.add_argument("--no-sandbox")
+    # options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     if headless:
         options.add_argument("headless")
@@ -613,7 +614,7 @@ def main():
         "Software Development Engineer with 4+ Years Experience in Platform Engineering,Python,Golang,Microservices,FastAPI,SQL,Postgres,MongoDB,Redis,Docker,Kubernetes,CI/CD,GitOps",
         "Software Engineer with 4+ Years Experience in Backend Development,Python,Golang,FastAPI,Microservices,SQL,Postgres,MongoDB,Redis,Docker,Kubernetes,CI/CD,AI,LLM",
         "Software Development Engineer with 4+ Years Experience in Backend Systems,Python,Golang,FastAPI,Microservices,SQL,Postgres,MongoDB,Redis,Kubernetes,Docker,CI/CD,AI",
-        "Software Engineer with 4+ Years Experience in Software Development,Python,Golang,FastAPI,Microservices,SQL,Postgres,MongoDB,Redis,AWS,Docker,Kubernetes,CI/CD,AI"
+        "Software Engineer with 4+ Years Experience in Software Development,Python,Golang,FastAPI,Microservices,SQL,Postgres,MongoDB,Redis,AWS,Docker,Kubernetes,CI/CD,AI",
     ]
 
     try:
