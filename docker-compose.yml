@@ -6,6 +6,8 @@ services:
     # image: ghcr.io/crackedngineer/naukri-bot:latest
     container_name: naukri-bot
     shm_size: "2gb" # Chrome needs more than Docker's default 64MB /dev/shm
+    env_file:
+      - .env
     environment:
       - NAUKRI_USERNAME=${NAUKRI_USERNAME}
       - NAUKRI_PASSWORD=${NAUKRI_PASSWORD}
