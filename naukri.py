@@ -275,7 +275,7 @@ def LoadNaukri(headless):
     # all and Selenium fails with "session not created: Chrome instance
     # exited". --disable-dev-shm-usage avoids crashes from Docker's small
     # default /dev/shm (also pass --shm-size=2g when running the container).
-    # options.add_argument("--no-sandbox")
+    options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     if headless:
         options.add_argument("headless")
