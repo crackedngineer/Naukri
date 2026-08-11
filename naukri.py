@@ -8,6 +8,7 @@ import os
 import sys
 import time
 import random
+import requests
 from datetime import datetime
 from random import choice, randint
 from string import ascii_uppercase, digits
@@ -50,6 +51,21 @@ username = os.getenv("NAUKRI_USERNAME", "")
 password = os.getenv("NAUKRI_PASSWORD", "")
 mob = os.getenv("NAUKRI_MOBILE", "")
 
+# Waha Credentials
+WAHA_API_URL = os.getenv("WAHA_API_URL", "")
+if not WAHA_API_URL:
+    raise ValueError("Environment variable 'WAHA_API_URL' is not set")
+WAHA_API_TOKEN = os.getenv("WAHA_API_TOKEN", "")
+if not WAHA_API_TOKEN:
+    raise ValueError("Environment variable 'WAHA_API_TOKEN' is not set")
+WAHA_GROUP_ID = os.getenv("WAHA_GROUP_ID", "")
+if not WAHA_GROUP_ID:
+    raise ValueError("Environment variable 'WAHA_GROUP_ID' is not set")
+
+CRONMASTER_URL = os.getenv("CRONMASTER_URL", "")
+if not CRONMASTER_URL:
+    raise ValueError("Environment variable 'CRONMASTER_URL' is not set")
+
 # False if you dont want to add Random HIDDEN chars to your resume
 updatePDF = False
 
@@ -67,6 +83,21 @@ logging.basicConfig(
 # logging.disable(logging.CRITICAL)
 os.environ["WDM_LOCAL"] = "1"
 os.environ["WDM_LOG_LEVEL"] = "0"
+
+
+def send_whatsapp_report(content: str) -> None:
+    content += f"\n\nCronMaster URL: {CRONMASTER_URL}"
+    data = requests.post(
+        url=f"{WAHA_API_URL}/api/sendText",
+        json={
+            "chatId": WAHA_GROUP_ID,
+            "text": content,
+            "session": "default",
+        },
+        headers={"X-Api-Key": WAHA_API_TOKEN},
+    )
+    if data.status_code > 300:
+        log_msg(f"Failed to send WhatsApp report: {data.status_code} - {data.text}")
 
 
 def catch(error):
@@ -616,6 +647,8 @@ def main():
         "Software Development Engineer with 4+ Years Experience in Backend Systems,Python,Golang,FastAPI,Microservices,SQL,Postgres,MongoDB,Redis,Kubernetes,Docker,CI/CD,AI",
         "Software Engineer with 4+ Years Experience in Software Development,Python,Golang,FastAPI,Microservices,SQL,Postgres,MongoDB,Redis,AWS,Docker,Kubernetes,CI/CD,AI",
     ]
+    curr_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    waha_report_content = f"Naukri.py Script Run Begin\n{curr_datetime}\n"
 
     try:
         status, driver = naukriLogin(headless)
@@ -626,18 +659,23 @@ def main():
             driver.implicitly_wait(5)
             if "profile" in driver.title.lower():
                 log_msg("Profile Page Loaded Successfully!")
+                waha_report_content += f"✅ Profile Page Loaded Successfully\n"
             UpdateResumeHeadline(driver, random.choice(RESUME_HEADLINES))
+            waha_report_content += f"✅ Resume headline Updated Successfully\n"
             if os.path.exists(originalResumePath):
                 if updatePDF:
                     resumePath = UpdateResume()
                     UploadResume(driver, resumePath)
                 else:
                     UploadResume(driver, originalResumePath)
+                waha_report_content += f"✅ Resume Upload Attempted\n"
             else:
                 log_msg("Resume not found at %s " % originalResumePath)
+                waha_report_content += f"❌ Resume not found at {originalResumePath}\n"
 
     except Exception as e:
         catch(e)
+        waha_report_content += f"❌ Error during script execution: {e}\n"
 
     finally:
         if driver is not None:
@@ -647,6 +685,7 @@ def main():
             except Exception as e:
                 log_msg("Error during logout: %s" % e)
         tearDown(driver)
+        send_whatsapp_report(waha_report_content)
 
     log_msg("-----Naukri.py Script Run Ended-----\n")
 
