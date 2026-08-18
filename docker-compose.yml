@@ -17,5 +17,8 @@ services:
       - NAUKRI_SALARY=${NAUKRI_SALARY}
     volumes:
       - ./${NAUKRI_ORIGINAL_RESUME_PATH}:/app/${NAUKRI_ORIGINAL_RESUME_PATH}:ro # put your resume next to this file
-      - ./naukri.log:/app/naukri.log # log persists on the host after each run
+      - ./logs:/app/logs
       - ./screenshots:/app/screenshots
+
+volumes:
+  naukri_logs:

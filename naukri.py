@@ -78,7 +78,7 @@ headless = False
 NaukriURL = constants.NAUKRI_LOGIN_URL
 
 logging.basicConfig(
-    level=logging.INFO, filename="naukri.log", format="%(asctime)s    : %(message)s"
+    level=logging.INFO, filename="./logs/naukri.log", format="%(asctime)s    : %(message)s"
 )
 # logging.disable(logging.CRITICAL)
 os.environ["WDM_LOCAL"] = "1"
